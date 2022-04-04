@@ -1,0 +1,3 @@
+rm executable
+gcc ./transport.c -o executable -lm
+./executable
