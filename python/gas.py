@@ -584,15 +584,44 @@ def test():
     plt.colorbar()
     plt.show()
 
+def testPressure():
+
+    x = numpy.arange(-7., 1., 0.5)    
+    y = numpy.arange(0.5, 3, 0.25)
+    
+    X, Y = numpy.meshgrid(y, x)
+    
+    error = X*0.0
+
+    rr = x*0
+    for ii in range(0, len(rr)):    
+        rr[ii] = 1.292*(10.**x[ii])
+        
+    ee = y*0
+    for ii in range(0, len(ee)):    
+        ee[ii] = 78408.4*(10.**y[ii])
+ 
+    for ii in range(0, len(rr)):
+        for jj in range(0, len(ee)):
+            p, A = p_TGAS(rr[ii], ee[jj])
+            p1 = tan.pressureAux(rr[ii], ee[jj])
+            error[ii][jj] = p1/p - 1
+    
+    plt.figure()
+    plt.title('error')        
+    plt.contourf(X, Y, error)
+    plt.colorbar()
+    plt.show()
+
 if __name__=="__main__":
 
     
 #    checkEntalpy()
 #    checkPressure()
 #    checkSound()
-    checkTemperature()
+#    checkTemperature()
 #    test()
-
+    testPressure()
 
 
 

@@ -175,10 +175,8 @@ def gamma_a1(a, Y, Z):
 
 def gamma_a(rho, e):
 
-    aux = numpy.log(10)
-
-    Y = numpy.log(rho/1.292)/aux
-    Z = numpy.log(e/78408.4)/aux
+    Y = numpy.log10(rho/1.292)
+    Z = numpy.log10(e/78408.4)
 
     a = func_a(Y, Z)
         
@@ -249,14 +247,14 @@ def test():
  
     for ii in range(0, len(rr)):
         for jj in range(0, len(ee)):
-            p = pressure(rr[ii], ee[jj])
+            p = pressureAux(rr[ii], ee[jj])
             e = energy(rr[ii], p)
             p2 = pressure(rr[ii], e)
             e2 = energy(rr[ii], p2)
 
-            #error[ii][jj] = e/ee[jj] - 1
+            error[ii][jj] = e/ee[jj] - 1
             #error[ii][jj] = e2/e - 1
-            error[ii][jj] = p2/p - 1
+            #error[ii][jj] = p2/p - 1
     
     plt.figure()
     plt.title('error')        
