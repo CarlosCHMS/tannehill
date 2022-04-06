@@ -154,7 +154,11 @@ def entalpy(rho, p):
     
     return (p/rho)*(g/(g-1))
     
+def energy(rho, p):
 
+    h = entalpy(rho, p)
+    return h - p/rho
+    
 def gamma_a1(a, Y, Z):
 
     gamma = a[0] + a[1]*Y + a[2]*Z
@@ -205,11 +209,25 @@ def sound(rho, e):
     return numpy.sqrt(e*(K1 + (g0-1)*(g0 + K2*dgdz/aux) + K3*dgdy/aux))
 
 
-def pressure(rho, e):
+def pressureAux(rho, e):
 
     g = gamma_a(rho, e)
     
     return rho*e*(g-1)
+
+
+def pressure(rho, e):
+
+    p = pressureAux(rho, e)
+    
+    dp = p*0.001
+    
+    e1 = energy(rho, p)
+    e2 = energy(rho, p+dp)
+    
+    p += (e - e1)*dp/(e2-e1)
+    
+    return p 
     
     
 def test():
@@ -232,8 +250,13 @@ def test():
     for ii in range(0, len(rr)):
         for jj in range(0, len(ee)):
             p = pressure(rr[ii], ee[jj])
-            h = entalpy(rr[ii], p)
-            error[ii][jj] = (h - p/rr[ii])/ee[jj] - 1
+            e = energy(rr[ii], p)
+            p2 = pressure(rr[ii], e)
+            e2 = energy(rr[ii], p2)
+
+            #error[ii][jj] = e/ee[jj] - 1
+            #error[ii][jj] = e2/e - 1
+            error[ii][jj] = p2/p - 1
     
     plt.figure()
     plt.title('error')        
@@ -322,7 +345,7 @@ def entalpyFit():
 if __name__=='__main__':
 
     test()
-    pressureFit()
-    temperatureFit()
-    entalpyFit()
+    #pressureFit()
+    #temperatureFit()
+    #entalpyFit()
     
