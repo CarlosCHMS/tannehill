@@ -423,10 +423,8 @@ double gamma_a1(double* a, double Y, double Z)
 double gamma_a(GAS* gas, double rho, double e)
 {
 
-    double aux = log(10);
-
-    double Y = log(rho/1.292)/aux;
-    double Z = log(e/78408.4)/aux;
+    double Y = log10(rho/1.292);
+    double Z = log10(e/78408.4);
 
     double* a = gasFuncA(gas, Y, Z);
         
@@ -439,8 +437,8 @@ double gasSound(GAS* gas, double rho, double e)
 
     double aux = log(10);
 
-    double Y = log(rho/1.292)/aux;
-    double Z = log(e/78408.4)/aux;
+    double Y = log10(rho/1.292);
+    double Z = log10(e/78408.4);
 
     double* a = gasFuncA(gas, Y, Z);
 
@@ -460,7 +458,7 @@ double gasSound(GAS* gas, double rho, double e)
     
 }
 
-double gasPressure(GAS* gas, double rho, double e)
+double gasPressureAux(GAS* gas, double rho, double e)
 {
     return rho*e*(gamma_a(gas, rho, e) - 1);
 }
@@ -481,34 +479,6 @@ double temperature_b(double* b, double Y, double Z)
 
 }
 
-double gasTemperature(GAS* gas, double rho, double e)
-{
-
-    double aux = log(10);
-
-    double p = gasPressure(gas, rho, e);
-
-    double Y = log(rho/1.225)/aux;
-    double X = log(p/1.0134e5)/aux;
-    double Z = X-Y;
-
-    double* b = gasFuncB(gas, Y, Z);    
-    
-    double T;
-        
-    if(b[0] == 0.0)
-    {
-        T = p/(287.058*rho);
-    }
-    else
-    {
-        T = 151.78*exp(aux*temperature_b(b, Y, Z));
-    }
-    
-    return T;
-    
-}
-
 double gamma_c1(double* c, double X, double Y, double Z)
 {
 
@@ -524,12 +494,10 @@ double gamma_c1(double* c, double X, double Y, double Z)
 }
 
 double gamma_c(GAS* gas, double rho, double p)
-{
- 
-    double aux = log(10);  
+{ 
 
-    double Y = log(rho/1.292)/aux;
-    double X = log(p/1.013e5)/aux;
+    double Y = log10(rho/1.292);
+    double X = log10(p/1.013e5);
     double Z = X-Y;
     
     double* c = gasFuncC(gas, Y, Z);
@@ -547,18 +515,109 @@ double gasEntalpy(GAS* gas, double rho, double p)
     
 }
 
-int main()
+double gasEnergy(GAS* gas, double rho, double p)
+{
+    
+    return gasEntalpy(gas, rho, p) - p/rho;
+    
+}
+
+
+double gasPressure(GAS* gas, double rho, double e)
+{
+
+    double p = gasPressureAux(gas, rho, e);
+    
+    double dp = p*0.001;
+    
+    double e1 = gasEnergy(gas, rho, p);
+    double e2 = gasEnergy(gas, rho, p+dp);
+    
+    p += (e - e1)*dp/(e2-e1);
+
+    
+    e1 = gasEnergy(gas, rho, p);
+    e2 = gasEnergy(gas, rho, p+dp);
+    
+    p += (e - e1)*dp/(e2-e1);
+    
+
+    return p; 
+
+}
+
+double gasTemperature(GAS* gas, double rho, double e)
+{
+
+
+    double p = gasPressure(gas, rho, e);
+
+    double Y = log10(rho/1.225);
+    double X = log10(p/1.0134e5);
+    double Z = X-Y;
+
+    double* b = gasFuncB(gas, Y, Z);    
+    
+    double T;
+        
+    if(b[0] == 0.0)
+    {
+        T = p/(287.058*rho);
+    }
+    else
+    {
+        T = 151.78*pow(10.0, temperature_b(b, Y, Z));
+    }
+    
+    return T;
+    
+}
+
+void table()
 {
 
     GAS* gas = gasInit();
+
+    FILE* ff = fopen("table_c.csv","w");
+
+    double rr[8] = {  1.29200000e-07,   1.29200000e-06,   1.29200000e-05,   1.29200000e-04, 1.29200000e-03,   1.29200000e-02,   1.29200000e-01,   1.29200000e+00};
+
+    double ee[5] = {   247949.13168955,    784084.,  2479491.31689546,   7840840.,  24794913.16895464};
+
+    double p, a, T, h;
+
+    for(int ii=0; ii<8; ii++)
+    {
+        for(int jj=0; jj<5; jj++)
+        {
+            p = gasPressure(gas, rr[ii], ee[jj]);
+            a = gasSound(gas, rr[ii], ee[jj]);
+            T = gasTemperature(gas, rr[ii], ee[jj]);
+            h = gasEntalpy(gas, rr[ii], p);
+    
+
+            fprintf(ff, "%e, %e, %e, %e, %e, %e,\n", rr[ii], ee[jj], p, a, T, h);
+        }
+    }
+
+    fclose(ff);
+
+}
+
+int main()
+{
+
+    //GAS* gas = gasInit();
     
     //gasMprint(gas->cRow, gas->cCol, gas->cc);
 
-    double* c = gasFuncC(gas, -4.5, 2.5);
+    //double* c = gasFuncC(gas, -4.5, 2.5);
 
     //gasVprint(gas->cRow, c);
     
-    printf("%f", gasEntalpy(gas, 1.0, 1.e5));
+    //printf("%f", gasEntalpy(gas, 1.0, 1.e5));
+
+    table();
 
     return 0;
 

@@ -45,12 +45,10 @@ def func_a(Y, Z):
 
 def temperature(rho, e):
 
-    aux = numpy.log(10)
-
     p = pressure(rho, e)
 
-    Y = numpy.log(rho/1.225)/aux
-    X = numpy.log(p/1.0134e5)/aux
+    Y = numpy.log10(rho/1.225)
+    X = numpy.log10(p/1.0134e5)
     Z = X-Y
 
     if Y > -0.5:
@@ -99,17 +97,17 @@ def temperature(rho, e):
 
         ans += aux2
     
-        T = 151.78*numpy.exp(aux*ans)
+        T = 151.78*(10**ans)
 
     return T
 
 
-def entalpy(rho, p):
+def gamma_c(rho, p):
 
     aux = numpy.log(10)  
 
-    Y = numpy.log(rho/1.292)/aux
-    X = numpy.log(p/1.013e5)/aux
+    Y = numpy.log10(rho/1.292)
+    X = numpy.log10(p/1.013e5)
     Z = X-Y
 
     if Y > -0.50:
@@ -152,8 +150,14 @@ def entalpy(rho, p):
     
     g += aux
     
-    return (p/rho)*(g/(g-1))
+    return g
     
+def entalpy(rho, p):
+
+    g = gamma_c(rho, p)
+
+    return (p/rho)*(g/(g-1))
+
 def energy(rho, p):
 
     h = entalpy(rho, p)
@@ -187,8 +191,8 @@ def sound(rho, e):
 
     aux = numpy.log(10)
 
-    Y = numpy.log(rho/1.292)/aux
-    Z = numpy.log(e/78408.4)/aux
+    Y = numpy.log10(rho/1.292)
+    Z = numpy.log10(e/78408.4)
 
     a = func_a(Y, Z)
 
@@ -224,6 +228,11 @@ def pressure(rho, e):
     e2 = energy(rho, p+dp)
     
     p += (e - e1)*dp/(e2-e1)
+
+    e1 = energy(rho, p)
+    e2 = energy(rho, p+dp)
+    
+    p += (e - e1)*dp/(e2-e1)
     
     return p 
     
@@ -247,10 +256,10 @@ def test():
  
     for ii in range(0, len(rr)):
         for jj in range(0, len(ee)):
-            p = pressureAux(rr[ii], ee[jj])
+            p = pressure(rr[ii], ee[jj])
             e = energy(rr[ii], p)
-            p2 = pressure(rr[ii], e)
-            e2 = energy(rr[ii], p2)
+            #p2 = pressure(rr[ii], e)
+            #e2 = energy(rr[ii], p2)
 
             error[ii][jj] = e/ee[jj] - 1
             #error[ii][jj] = e2/e - 1
@@ -258,7 +267,7 @@ def test():
     
     plt.figure()
     plt.title('error')        
-    plt.contourf(X, Y, error, levels=30)
+    plt.contourf(X, Y, error)
     plt.colorbar()
     plt.show()
 
@@ -338,12 +347,46 @@ def entalpyFit():
     plt.ylim([10.**-1, 10.**4])    
     plt.show()    
 
+def table():
 
+    x = numpy.arange(-7., 1., 1)    
+    y = numpy.arange(0.5, 3, 0.5)
+    
+    X, Y = numpy.meshgrid(y, x)
+    
+    error = X*0.0
+
+    rr = x*0
+    for ii in range(0, len(rr)):    
+        rr[ii] = 1.292*(10.**x[ii])
+        
+    ee = y*0
+    for ii in range(0, len(ee)):    
+        ee[ii] = 78408.4*(10.**y[ii])
+
+    print(rr)
+    print(ee)
+
+    ff = open('table_py.csv', 'w')
+ 
+    for ii in range(0, len(rr)):
+        for jj in range(0, len(ee)):
+            p = pressure(rr[ii], ee[jj])
+            a = sound(rr[ii], ee[jj])
+            T = temperature(rr[ii], ee[jj])
+            h = entalpy(rr[ii], p)
+            
+            ff.write("%e, %e, %e, %e, %e, %e,\n"%(rr[ii], ee[jj], p, a, T, h))
+
+    ff.close()
+
+    return None
     
 if __name__=='__main__':
 
-    test()
+    #test()
     #pressureFit()
     #temperatureFit()
     #entalpyFit()
+    table()
     
