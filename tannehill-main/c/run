@@ -1,3 +1,0 @@
-rm ./executable
-gcc ./tannehill.c -o executable -lm
-./executable
